@@ -2,6 +2,7 @@ package com.neotys.neoload.model.readers.loadrunner;
 
 import java.net.URL;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -30,8 +31,9 @@ public class WebSubmitData extends WebRequest {
 
         pageBuilder.addChilds(buildPostRequest(visitor, method));
         
-        MethodUtils.extractItemListAsStringList(visitor.getLeftBrace(), visitor.getRightBrace(), method.getParameters(), MethodUtils.ITEM_BOUNDARY.EXTRARES.toString()).ifPresent(stringList ->
-        		getUrlList(stringList, getUrl(visitor.getLeftBrace(), visitor.getRightBrace(), method)).stream().forEach(url -> pageBuilder.addChilds(buildGetRequestFromURL(visitor, url))));
+        MethodUtils.extractItemListAsStringList(visitor.getLeftBrace(), visitor.getRightBrace(), method.getParameters(), MethodUtils.ITEM_BOUNDARY.EXTRARES.toString())
+				.ifPresent(stringList -> getUrlList(stringList, getUrl(visitor.getLeftBrace(), visitor.getRightBrace(), method))
+						.forEach(url -> pageBuilder.addChilds(buildGetRequestFromURL(visitor, url, Optional.empty()))));
         
         return pageBuilder.name(MethodUtils.normalizeString(visitor.getLeftBrace(), visitor.getRightBrace(), method.getParameters().get(0)))
                 .thinkTime(0)
@@ -50,7 +52,8 @@ public class WebSubmitData extends WebRequest {
                 .name(mainUrl.getPath())
                 .path(mainUrl.getPath())
                 .server(getServer(visitor.getReader(), mainUrl))
-                .httpMethod(getMethod(visitor.getLeftBrace(), visitor.getRightBrace(), method));
+                .httpMethod(getMethod(visitor.getLeftBrace(), visitor.getRightBrace(), method))
+                .recordedFiles(getRecordedFilesFromSnapshotFile(visitor.getLeftBrace(), visitor.getRightBrace(), method, visitor.getReader().getProjectFolder()));
 
     	requestBuilder.addAllExtractors(visitor.getCurrentExtractors());
     	requestBuilder.addAllValidators(visitor.getCurrentValidators());
